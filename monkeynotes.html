@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>monkeynotes - type your notes along with the lecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eceff3;--pn:#fff;--tx:#2b3340;--dm:#9aa5b5;--ac:#a86f00;--er:#c43d4b;--bd:#d5dae2;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1f2430;--pn:#272d3a;--tx:#d9dee8;--dm:#5f6a7e;--ac:#e2b714;--er:#ca4754;--bd:#343c4d}}
+:root[data-theme="dark"]{--bg:#1f2430;--pn:#272d3a;--tx:#d9dee8;--dm:#5f6a7e;--ac:#e2b714;--er:#ca4754;--bd:#343c4d}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace}
+.w{max-width:1100px;margin:0 auto;padding:16px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+h1{font-size:22px;margin:0;font-weight:600}h1 b{color:var(--ac)}
+button,.f{font:inherit;color:var(--tx);background:var(--pn);border:1px solid var(--bd);border-radius:6px;padding:8px 14px;cursor:pointer}
+button:hover{border-color:var(--ac)}button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+button.p{background:var(--ac);color:var(--bg);border-color:var(--ac);font-weight:600}
+button:disabled{opacity:.5;cursor:wait}
+.s{color:var(--dm)}
+textarea,#ti{width:100%;font:inherit;color:var(--tx);background:var(--pn);border:1px solid var(--bd);border-radius:6px;padding:12px}
+textarea{min-height:300px;resize:vertical}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+#test{display:grid;grid-template-columns:230px 1fr;gap:24px}
+#rail{display:flex;flex-direction:column;gap:4px;max-height:75vh;overflow:auto}
+.r{display:flex;gap:8px;text-align:left;border:0;background:none;padding:8px;border-left:2px solid var(--bd);border-radius:0;width:100%}
+.r.on{border-left-color:var(--ac);background:var(--pn)}.r i{font-style:normal;color:var(--dm);min-width:42px}.r span{flex:1}.r em{font-style:normal;color:var(--ac)}
+.bar{display:flex;gap:28px;flex-wrap:wrap;align-items:baseline;margin:12px 0 16px}
+.bar div{color:var(--dm)}.bar b{display:block;color:var(--ac);font-size:30px;line-height:1.1}
+#words{font-size:24px;line-height:2.3rem;white-space:pre-wrap;color:var(--dm);cursor:text;min-height:160px;user-select:none}
+.c.ok{color:var(--tx)}.c.bad{color:var(--er);background:color-mix(in srgb,var(--er) 18%,transparent)}
+.c.cur{box-shadow:inset 2px 0 0 var(--ac)}.c.gh{background:color-mix(in srgb,var(--dm) 35%,transparent)}
+#in{position:absolute;opacity:0;pointer-events:none;width:1px}
+#res{background:var(--pn);border:1px solid var(--bd);border-radius:8px;padding:20px}
+#res pre{white-space:pre-wrap;font:inherit;max-height:45vh;overflow:auto}
+.hint{margin-top:18px;color:var(--dm);font-size:13px;gap:8px 18px}select{font:inherit;color:var(--tx);background:var(--pn);border:1px solid var(--bd);border-radius:6px;padding:3px 6px}.bw{display:flex;align-items:center;gap:8px;margin:4px 0}.bw span{width:40px;color:var(--dm)}.bw i{height:10px;background:var(--ac);border-radius:2px}.bw b{font-weight:400}
+@media(max-width:760px){#test{grid-template-columns:1fr}#rail{flex-direction:row;max-height:none}.r{min-width:150px;border-left:0;border-bottom:2px solid var(--bd)}.r.on{border-bottom-color:var(--ac)}#words{font-size:19px;line-height:1.9rem}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script></head><body><div class="w">
+<header><h1>monkey<b>notes</b></h1><span><button id="back" hidden>new lecture</button> <button id="th" aria-label="Toggle theme">theme</button></span></header>
+
+<section id="setup">
+<p class="s">Upload your slides (PDF or PowerPoint) and paste a transcript or rough notes. AI turns it into slide-by-slide notes, and each slide becomes its own typing test, paced like the lecturer.</p>
+<textarea id="ta" placeholder="Paste transcript, notes, slide text, links with their captions... Timestamps like 04:30 at the start of a paragraph line sections up with the lecture clock."></textarea>
+<div class="row">
+<button class="p" id="go">Generate notes</button>
+<button id="demo">Try a demo lecture</button>
+<label class="f">Upload PDF, PowerPoint, or text<input id="fl" type="file" multiple accept=".pdf,.pptx,.ppt,.txt,.md,.srt,.vtt,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/*" hidden></label>
+</div>
+<p class="s" id="msg" role="status">Audio and links cannot be opened here: paste the transcript or captions text for them.</p>
+<div id="lib" class="row"></div>
+</section>
+
+<section id="test" hidden>
+<nav id="rail" aria-label="Slides"></nav>
+<main>
+<div class="s" id="hd"></div><h2 id="st" style="margin:4px 0 0"></h2><div class="s" id="tm"></div>
+<div class="bar"><div><b id="wpm">0</b>wpm</div><div><b id="acc">100%</b>acc</div><div><b id="clk">0:00</b>time</div><div><b id="pc">0</b>words vs pace</div><div><b id="pw">-</b>pace wpm</div></div>
+<div id="words" tabindex="-1"></div>
+<input id="in" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type the notes here">
+<div id="res" hidden></div>
+<div class="hint row"><label>pace caret <select id="pm"><option value="lec">lecturer speaking pace</option><option value="avg">my average</option><option value="off">off</option><option value="30">30 wpm</option><option value="45">45 wpm</option><option value="60">60 wpm</option><option value="80">80 wpm</option><option value="100">100 wpm</option><option value="150">150 wpm</option><option value="180">180 wpm</option></select></label><label><input type="checkbox" id="lv"> live lecture (auto-advance)</label><label><input type="checkbox" id="ic"> ignore capitals</label><span>tab next, shift+tab back, esc restart</span></div>
+</main></section></div>
+<script>
+const $=s=>document.querySelector(s),W=$('#words'),IN=$('#in');
+let slides=[],title='',idx=0,text='',start=0,prev=0,good=0,tot=0,cc=0,PW=45,gs=0,timer=0,done=false,res=[],spans=[];
+const pt=t=>{const m=/^(?:(\d+):)?(\d+):(\d+)$/.exec(t||'');return m?(+(m[1]||0))*3600+(+m[2])*60+(+m[3]):null};
+const clean=s=>String(s==null?'':s).replace(/[\u2018\u2019]/g,"'").replace(/[\u201c\u201d]/g,'"').replace(/[\u2013\u2014]/g,'-').replace(/\u2026/g,'...').replace(/[^\x20-\x7e]/g,'').replace(/\s+/g,' ').trim();
+const fmt=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
+const msg=t=>$('#msg').textContent=t;
+const DEMO={title:'Demo: how CPU caches work',slides:[
+{time:'0:00',title:'Why caches exist',notes:['Main memory is hundreds of times slower than the processor.','A cache keeps recently used data close to the CPU so most reads skip the long trip.']},
+{time:'2:10',title:'Locality',notes:['Temporal locality means data used once is likely to be used again soon.','Spatial locality means nearby addresses are likely to be read next, so caches load whole lines.']},
+{time:'4:30',title:'Hits, misses, and AMAT',notes:['A hit is found in the cache and a miss must go to the next level.','Average access time equals hit time plus miss rate times miss penalty.']},
+{time:'7:05',title:'Replacement policies',notes:['When a set is full, the cache must evict a line.','LRU removes the line unused for the longest time, while random is cheaper in hardware.']}]};
+const PROMPT='You turn lecture material into typing-practice notes. The input may be a transcript, rough notes, slide text, or links. Split it into 5-12 sections in lecture order, one per slide or topic. For each give: time (mm:ss from timestamps in the input, or "" if none), a short title, and 2-4 concise note sentences. Use only plain keyboard characters (no emoji, curly quotes, or long dashes). Use only what the input says: you cannot open URLs, so never invent content for a bare link. Return JSON only: {"title":string,"slides":[{"time":string,"title":string,"notes":[string]}]}\n\nINPUT:\n';
+const local=raw=>({title:'Notes',slides:raw.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean).filter(p=>!/^===/.test(p)).slice(0,40).map(p=>{const q=/^\[Slide (\d+)\]\s*/i.exec(p),m=!q&&/^\[?(\d+:\d\d(?::\d\d)?)\]?\s*/.exec(p),b=p.replace((q||m||[''])[0],'').replace(/\s+/g,' '),ss=b.match(/[^.!?]+[.!?]*/g)||[b];return{slide:q?+q[1]:0,time:m?m[1]:'',title:ss[0].trim().split(' ').slice(0,6).join(' '),notes:ss.slice(0,4)}})});
+
+function begin(d,skip){
+  const a=(Array.isArray(d)?d:d.slides)||[];title=clean(d.title||'');
+  slides=a.map(s=>{const notes=(s.notes||[]).map(clean).filter(Boolean);return{slide:parseInt(s.slide)||0,time:clean(s.time),title:clean(s.title)||'Slide',notes,text:notes.join(' ')}}).filter(s=>s.text);
+  slides.forEach((s,i)=>{const t=pt(s.time),n=slides[i+1]?pt(slides[i+1].time):null,win=t!=null&&n!=null&&n>t?n-t:0;
+    s.win=win;});
+  if(!slides.length)return msg('No usable notes came back. Try pasting more text.');
+  if(!skip&&d!==DEMO)saveLib({title:title||'Untitled lecture',slides:a});res=[];$('#setup').hidden=true;$('#test').hidden=false;$('#back').hidden=false;load(0)}
+
+function rail(){const r=$('#rail');r.innerHTML='';slides.forEach((s,i)=>{const b=document.createElement('button');b.className='r'+(i===idx?' on':'');
+  const a=document.createElement('i'),t=document.createElement('span'),w=document.createElement('em');a.textContent=s.time||'#'+(s.slide||i+1);t.textContent=s.title;w.textContent=res[i]?res[i].wpm:'';
+  b.append(a,t,w);b.onclick=()=>load(i);r.append(b)})}
+
+function load(i){
+  clearInterval(timer);idx=i;const s=slides[i];text=s.text;PW=pace(s);gs=performance.now();start=0;prev=0;good=0;tot=0;done=false;
+  $('#hd').textContent='Slide '+(i+1)+' of '+slides.length+(title?' - '+title:'');$('#st').textContent=s.title;
+  $('#tm').textContent=(s.slide?'Deck slide '+s.slide+(s.time?' - ':''):'')+(s.time?'Lecture clock '+s.time:'')+(s.win?' - lecturer spends '+fmt(s.win)+' here':'');
+  W.textContent='';spans=[...text].map(ch=>{const e=document.createElement('span');e.className='c';e.textContent=ch;W.append(e);return e});
+  IN.value='';$('#res').hidden=true;W.hidden=false;$('#pw').textContent=ghost()?PW:'-';upd();rail();IN.focus();if(live())timer=setInterval(upd,100)}
+
+const el=()=>start?(performance.now()-start)/1000:0,live=()=>$('#lv').checked,ghost=()=>$('#pm').value!=='off'||live(),gt=()=>live()?(performance.now()-gs)/1000:el(),lim=()=>text.length*12/PW+5,eq=(a,b)=>a===b||($('#ic').checked&&String(a).toLowerCase()===String(b).toLowerCase());
+function pace(s){const m=$('#pm').value;if(m==='avg'){const r=res.filter(Boolean);return r.length?Math.max(20,Math.round(r.reduce((a,x)=>a+x.wpm,0)/r.length)):130}
+  return /^\d+$/.test(m)?+m:s.win?Math.max(110,Math.min(160,Math.round(s.text.length/5/(s.win/60)))):130}
+function upd(){
+  const v=IN.value,n=v.length,t=el(),g=gt(),gc=Math.min(text.length,Math.floor(g*PW*5/60)),gp=ghost()&&(start||live())&&!done;cc=0;
+  for(let i=0;i<spans.length;i++){let k='c';if(i<n){if(eq(v[i],text[i])){k+=' ok';cc++}else k+=' bad'}if(i===n)k+=' cur';if(gp&&i===Math.min(gc,text.length-1))k+=' gh';spans[i].className=k}
+  $('#wpm').textContent=t>.8?Math.round(cc/5/(t/60)):0;$('#acc').textContent=(tot?Math.round(good/tot*100):100)+'%';
+  $('#clk').textContent=fmt(t);const d=Math.round((n-gc)/5);$('#pc').textContent=start||live()?(d>0?'+':'')+d:0;if(live()&&!done&&g>=lim())finish()}
+
+IN.addEventListener('input',()=>{if(done)return;let v=IN.value;if(v.length>text.length){v=v.slice(0,text.length);IN.value=v}
+  if(!start){start=performance.now();if(!live())timer=setInterval(upd,100)}
+  if(v.length>prev){const i=v.length-1;tot++;if(eq(v[i],text[i]))good++}prev=v.length;upd();if(v.length>=text.length)finish()});
+IN.addEventListener('paste',e=>e.preventDefault());
+W.onclick=()=>IN.focus();
+
+function finish(){
+  done=true;clearInterval(timer);upd();const t=el(),wpm=t>.5?Math.round(cc/5/(t/60)):0,acc=tot?Math.round(good/tot*100):100,d=Math.round((IN.value.length-Math.min(text.length,Math.floor(gt()*PW*5/60)))/5);
+  res[idx]={wpm,acc};rail();const r=$('#res'),last=idx===slides.length-1;r.hidden=false;
+  r.innerHTML='<div class="bar" style="margin-top:0"><div><b>'+wpm+'</b>wpm</div><div><b>'+acc+'%</b>accuracy</div><div><b>'+fmt(t)+'</b>time</div><div><b>'+(d>0?'+':'')+d+'</b>words '+(d>=0?'ahead of':'behind')+' lecturer</div></div>'
+   +'<button class="p" id="nx">'+(last?'See summary':'Next slide')+'</button> <button id="rt">Retry</button> <span class="s">press enter for next</span>';
+  $('#nx').onclick=()=>go(1);$('#rt').onclick=()=>load(idx);$('#nx').focus();if(live()&&IN.value.length<text.length){const k=idx;setTimeout(()=>{if(idx===k&&done)go(1)},3000)}}
+
+function go(d){const i=idx+d;if(i>=slides.length)return summary();if(i>=0)load(i)}
+function summary(){
+  const r=res.filter(Boolean),avg=k=>r.length?Math.round(r.reduce((a,x)=>a+x[k],0)/r.length):0,
+  mx=Math.max(1,...r.map(x=>x.wpm)),bars=slides.map((s,i)=>res[i]?'<div class="bw"><span>#'+(s.slide||i+1)+'</span><i style="width:'+Math.round(res[i].wpm/mx*100)+'%"></i><b>'+res[i].wpm+'</b></div>':'').join(''),notes=slides.map(s=>(s.time?s.time+' ':'')+s.title+'\n- '+s.notes.join('\n- ')).join('\n\n');
+  W.hidden=true;const e=$('#res');e.hidden=false;e.innerHTML='<div class="bar" style="margin-top:0"><div><b>'+avg('wpm')+'</b>average wpm</div><div><b>'+avg('acc')+'%</b>average accuracy</div><div><b>'+r.length+'/'+slides.length+'</b>slides typed</div></div>'+bars+'<button id="cp" class="p">Copy all notes</button> <button id="rs">Start over</button><pre></pre>';
+  e.querySelector('pre').textContent=notes;
+  $('#cp').onclick=async()=>{try{await navigator.clipboard.writeText(notes);$('#cp').textContent='Copied'}catch(x){$('#cp').textContent='Select the text below to copy'}};
+  $('#rs').onclick=()=>{res=[];load(0)}}
+
+document.addEventListener('keydown',e=>{if($('#test').hidden)return;
+  if(e.key==='Escape'){e.preventDefault();load(idx)}else if(e.key==='Tab'){e.preventDefault();go(e.shiftKey?-1:1)}
+  else if(e.key==='Enter'){e.preventDefault();if(done)go(1)}});
+
+async function gen(){
+  const raw=$('#ta').value.trim();if(!raw)return msg('Paste a transcript, notes, slide text, or captions first.');
+  $('#go').disabled=true;msg('Turning it into slide-by-slide notes...');
+  try{const sm=window.claude&&await claude.use('sample');
+    if(!sm){msg('AI is not available in this view, so your text was split into sections locally.');begin(local(raw))}
+    else{begin(await sm.json(PROMPT.replace('INPUT:',RULES+'INPUT:')+raw.slice(0,40000),{cache:false}))}
+  }catch(e){msg('AI request failed ('+(e&&e.code||'error')+'), so your text was split into sections locally.');begin(local(raw))}
+  $('#go').disabled=false}
+$('#go').onclick=gen;$('#demo').onclick=()=>begin(DEMO);
+const RULES='Uploaded files: a line like "=== name ===" starts a new file. Text tagged [Slide N] came from a PDF page or PowerPoint slide, and "Speaker notes" is what the lecturer says. When tags are present (this overrides the 5-12 limit), make one section per slide with real content, in order, skipping title, agenda, and blank slides and merging neighbors if there would be more than 30 sections, and add "slide": N to each section object using the tag number. Without tags use "slide":0. If the input has timestamps, size the notes for each section to its time window: about 130 words per minute of lecture, which is a typical lecturer speaking pace.\n';
+async function pdfText(f){
+  if(!window.pdfjsLib)throw Error('The PDF reader did not load. Reload the page and try again.');
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const d=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise,o=[];
+  for(let i=1;i<=d.numPages;i++){const c=await(await d.getPage(i)).getTextContent(),t=c.items.map(x=>x.str).join(' ').replace(/\s+/g,' ').trim();if(t)o.push('[Slide '+i+'] '+t)}
+  return o.join('\n\n')}
+async function pptxText(f){
+  if(!window.JSZip)throw Error('The PowerPoint reader did not load. Reload the page and try again.');
+  const z=await JSZip.loadAsync(await f.arrayBuffer()),
+  X=async p=>z.file(p)?new DOMParser().parseFromString(await z.file(p).async('string'),'application/xml'):null,
+  T=d=>d?[...d.getElementsByTagName('a:t')].map(e=>e.textContent).join(' ').replace(/\s+/g,' ').trim():'',
+  R=d=>d?[...d.getElementsByTagName('Relationship')]:[],pr=await X('ppt/presentation.xml'),M={},o=[];
+  if(!pr)throw Error('That file does not look like a .pptx.');
+  R(await X('ppt/_rels/presentation.xml.rels')).forEach(r=>M[r.getAttribute('Id')]=r.getAttribute('Target'));
+  const ids=[...pr.getElementsByTagName('p:sldId')].map(e=>e.getAttribute('r:id'));
+  for(let i=0;i<ids.length;i++){const p=M[ids[i]].replace(/^\/?(ppt\/)?/,''),
+    nr=R(await X('ppt/slides/_rels/'+p.split('/').pop()+'.rels')).find(r=>/notesSlide/.test(r.getAttribute('Target'))),
+    s=T(await X('ppt/'+p)),n=nr?T(await X('ppt/notesSlides/'+nr.getAttribute('Target').split('/').pop())):'';
+    if(s||n)o.push('[Slide '+(i+1)+'] '+s+(n?' Speaker notes: '+n:''))}
+  return o.join('\n\n')}
+$('#fl').onchange=async e=>{const fs=[...e.target.files];e.target.value='';
+  for(const f of fs){const n=f.name.toLowerCase();msg('Reading '+f.name+'...');
+    try{if(n.endsWith('.ppt'))throw Error('Old .ppt files are not supported. Save it as .pptx and upload again.');
+      const t=n.endsWith('.pdf')?await pdfText(f):n.endsWith('.pptx')?await pptxText(f):await f.text();
+      if(!t.trim())throw Error('No selectable text found in '+f.name+' (scanned or image-only slides need OCR).');
+      const ta=$('#ta');ta.value+=(ta.value?'\n\n':'')+'=== '+f.name+' ===\n\n'+t;msg('Added '+f.name+'. Add more files or press Generate notes.')}
+    catch(x){msg(x.message||'Could not read '+f.name+'.');return}}};
+$('#back').onclick=()=>{clearInterval(timer);showLib();$('#test').hidden=true;$('#setup').hidden=false;$('#back').hidden=true;msg('Paste a new lecture, or generate again.')};
+$('#th').onclick=()=>{const d=document.documentElement,dk=d.dataset.theme?d.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;d.dataset.theme=dk?'light':'dark'};
+const LK='mn_lib',lib=()=>{try{return JSON.parse(localStorage.getItem(LK))||[]}catch(e){return[]}};
+function saveLib(d){try{localStorage.setItem(LK,JSON.stringify([d,...lib().filter(x=>x.title!==d.title)].slice(0,10)))}catch(e){}}
+function showLib(){const b=$('#lib'),l=lib();b.textContent='';if(l.length){const h=document.createElement('span');h.className='s';h.textContent='Saved on this device:';b.append(h)}
+  l.forEach(d=>{const x=document.createElement('button');x.textContent=d.title+' ('+d.slides.length+')';x.onclick=()=>begin(d,1);b.append(x)})}
+$('#pm').onchange=$('#lv').onchange=()=>{if(slides.length&&!$('#test').hidden)load(idx)};
+showLib();
+</script></body></html>
